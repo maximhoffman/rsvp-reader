@@ -10,6 +10,10 @@ Playback starts after a three-second countdown, the first word standing still. E
 
 Code blocks are skipped (shown as one placeholder token); headings, lists, links, tables and emphasis are flattened to prose. Sentence ends and commas get a longer pause.
 
+## Language
+
+The buttons and messages are in English by default. The install screen offers a `language` option (`en` or `ru`); later it is changed in `/config` under the plugin's row, or by setting `pluginConfigs.rsvp-reader.options.language` in `~/.claude/settings.json`. The text being read can be in any language.
+
 ## Install
 
 At the prompt of a Claude Code terminal session:

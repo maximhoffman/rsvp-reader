@@ -1,7 +1,9 @@
-import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, SessionMessage, Timer } from 'claude-code'
+import { atom, read, update } from "claude-code"
+import type { EngineInterface, Register, SessionMessage, Timer } from "claude-code"
 
-import type { Word } from '../types'
+import type { Word } from "../types"
+import { STRINGS, langOf } from "./strings"
+import type { Strings } from "./strings"
 import {
   DEFAULT_WPM,
   WPM_STEP,
@@ -14,15 +16,17 @@ import {
   tokenize,
 } from './text'
 
-const PANE = 'rsvp'
-const TITLE = 'Читалка'
+const PANE = "rsvp"
 const STORE_WPM = 'wpm'
 /** Seconds the first word stands still before playback starts. */
 const LEAD_SECONDS = 3
 /** How long after the command the pane asks for the keyboard again. */
 const REFOCUS_MS = 500
 
-const PANE_ARGS = { id: PANE, title: TITLE, focus: true, closeOnEscape: true, rows: 9 } as const
+// The texts of the language the person chose; set when the module registers.
+let t: Strings = STRINGS.en
+
+const paneArgs = () => ({ id: PANE, title: t.paneTitle, focus: true, closeOnEscape: true, rows: 9 }) as const
 
 // Bump the shape tag when Word's fields change: an earlier version's value
 // outlives a reload and is then read as the initial one.
@@ -164,15 +168,6 @@ function lastAnswer(messages: readonly SessionMessage[]): string | undefined {
   return undefined
 }
 
-function wordsNoun(n: number): string {
-  const tens = n % 100
-  const ones = n % 10
-  if (tens >= 11 && tens <= 14) return 'слов'
-  if (ones === 1) return 'слово'
-  if (ones >= 2 && ones <= 4) return 'слова'
-  return 'слов'
-}
-
 /**
  * The word split around its recognition point and fitted to `columns`: the
  * part before the pivot is padded so the pivot always lands on one column,
@@ -191,12 +186,14 @@ function layout(word: string, columns: number) {
   return { pad, before, pivot, after, pivotColumn }
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  t = STRINGS[langOf(options)]
+
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'rsvp',
-      description: 'Прочитать последний ответ по одному слову (быстрое чтение, RSVP)',
-      argumentHint: '[слов в минуту]',
+      description: t.commandDescription,
+      argumentHint: t.argumentHint,
     })
     const saved = await $.store.get(STORE_WPM)
     if (typeof saved === 'number') await update($, wpm, () => clampWpm(saved))
@@ -210,10 +207,10 @@ export const register: Register = on => {
 
     const found = await $.session.messages()
     const text = Array.isArray(found) ? lastAnswer(found) : undefined
-    if (text === undefined) return { text: 'Пока нет ответа, который можно прочитать.' }
+    if (text === undefined) return { text: t.noAnswer }
 
     const list = tokenize(flattenMarkdown(text))
-    if (list.length === 0) return { text: 'В последнем ответе нет текста для чтения.' }
+    if (list.length === 0) return { text: t.noText }
 
     stopTimer()
     await update($, words, () => list)
@@ -221,17 +218,15 @@ export const register: Register = on => {
     await update($, isPlaying, () => false)
     await update($, countdown, () => 0)
 
-    const opened = await $.ui.open(PANE_ARGS)
-    if (!opened.isPlaced) return { text: `Панель читалки не показана: ${opened.reason}.` }
+    const opened = await $.ui.open(paneArgs())
+    if (!opened.isPlaced) return { text: t.notPlaced(opened.reason) }
     await startAfterCountdown($)
     // The focus is a request the surface may refuse while the command still
     // runs; ask once more when the prompt is idle again.
-    $.clock.after(REFOCUS_MS, () => void $.ui.open(PANE_ARGS))
+    $.clock.after(REFOCUS_MS, () => void $.ui.open(paneArgs()))
     const speed = await read($, wpm)
 
-    return {
-      text: `Читалка: ${list.length} ${wordsNoun(list.length)}, ${speed} слов/мин. Старт через ${LEAD_SECONDS} с, Esc закрывает панель.`,
-    }
+    return { text: t.opened(list.length, speed, LEAD_SECONDS) }
   })
 
   on('ui.close', { id: PANE }, async ($, e, next) => {
@@ -257,7 +252,7 @@ export const register: Register = on => {
     if (list.length === 0) {
       return (
         <Box paddingX={1}>
-          <Text dimColor>Нет текста. Наберите /rsvp после ответа.</Text>
+          <Text dimColor>{t.emptyPane}</Text>
         </Box>
       )
     }
@@ -268,8 +263,8 @@ export const register: Register = on => {
     const { pad, before, pivot, after, pivotColumn } = layout(word.text, columns)
     const marker = ' '.repeat(pivotColumn)
     const percent = Math.round(((at + 1) / list.length) * 100)
-    const state = left > 0 ? `старт через ${left}…` : playing ? 'идёт' : 'пауза · p продолжит'
-    const status = `${at + 1}/${list.length} · ${percent}% · ${speed} слов/мин · ${state}`
+    const state = left > 0 ? t.startsIn(left) : playing ? t.playing : t.pausedHint
+    const status = `${at + 1}/${list.length} · ${percent}% · ${speed} ${t.wpmUnit} · ${state}`
 
     return (
       <Box flexDirection="column" paddingX={1}>
@@ -289,11 +284,9 @@ export const register: Register = on => {
           {status}
         </Text>
         {e.props.isFocused ? (
-          <Text dimColor>Клавиши ниже работают; Esc закрывает панель.</Text>
+          <Text dimColor>{t.focusedHint}</Text>
         ) : (
-          <Text color="warning">
-            Чтобы клавиши работали, передайте фокус панели: ctrl+x, затем Tab, или клик по панели.
-          </Text>
+          <Text color="warning">{t.focusHint}</Text>
         )}
         <Box flexDirection="row" flexWrap="wrap" gap={2}>
           <Button
@@ -303,10 +296,10 @@ export const register: Register = on => {
             autoFocus
             onPress={() => void (playing ? pause($) : play($))}
           >
-            {playing ? 'пауза' : 'пуск'}
+            {playing ? t.pause : t.play}
           </Button>
           <Button key="restart" plain hotkey="r" onPress={() => void restart($)}>
-            сначала
+            {t.restart}
           </Button>
           <Button
             key="close"
@@ -315,20 +308,20 @@ export const register: Register = on => {
             role="dismiss"
             onPress={() => void $.ui.close({ id: PANE })}
           >
-            закрыть
+            {t.close}
           </Button>
         </Box>
         <Box flexDirection="row" flexWrap="wrap" gap={2}>
           <Button key="word-back" plain hotkey="h" onPress={() => void seek($, (_, n) => n - 1)}>
-            слово назад
+            {t.wordBack}
           </Button>
           <Button key="word-forward" plain hotkey="l" onPress={() => void seek($, (_, n) => n + 1)}>
-            слово вперёд
+            {t.wordForward}
           </Button>
         </Box>
         <Box flexDirection="row" flexWrap="wrap" gap={2}>
           <Button key="sentence-back" plain hotkey="j" onPress={() => void seek($, sentenceStart)}>
-            начало предложения
+            {t.sentenceStart}
           </Button>
           <Button
             key="sentence-forward"
@@ -336,7 +329,7 @@ export const register: Register = on => {
             hotkey="k"
             onPress={() => void seek($, nextSentenceStart)}
           >
-            следующее предложение
+            {t.nextSentence}
           </Button>
         </Box>
         <Box flexDirection="row" flexWrap="wrap" gap={2}>
@@ -346,7 +339,7 @@ export const register: Register = on => {
             hotkey="a"
             onPress={() => void setWpm($, speed - WPM_STEP).then(() => arm($))}
           >
-            медленнее
+            {t.slower}
           </Button>
           <Button
             key="faster"
@@ -354,7 +347,7 @@ export const register: Register = on => {
             hotkey="d"
             onPress={() => void setWpm($, speed + WPM_STEP).then(() => arm($))}
           >
-            быстрее
+            {t.faster}
           </Button>
         </Box>
       </Box>

@@ -33,7 +33,7 @@ async function wordShown(ui: Pane): Promise<string> {
 
 /** The status line: position, speed and state. */
 async function statusShown(ui: Pane): Promise<string> {
-  return (await ui.find({ type: 'Text', text: /слов\/мин/ }))?.text ?? ''
+  return (await ui.find({ type: 'Text', text: /слов\/мин|wpm/ }))?.text ?? ''
 }
 
 const ANSWER = [
@@ -84,7 +84,7 @@ test('recognition point, delays and sentence seeks', async () => {
   expect(nextSentenceStart(words, 5)).toBe(5)
 })
 
-test('/rsvp reads the last answer, counts down, plays, and every seek waits for play', async ($, on) => {
+test('/rsvp reads the last answer, counts down, plays, and every seek waits for play (ru)', { options: { language: 'ru' } }, async ($, on) => {
   const clock = mock.clock(on)
   mock.store(on)
   const opened: string[] = []
@@ -170,6 +170,33 @@ test('/rsvp reads the last answer, counts down, plays, and every seek waits for 
   })
   expect(await blurred.find({ type: 'Text', text: /ctrl\+x/ })).toBeDefined()
   await blurred.unmount()
+})
+
+test('English is the default: the command answers and the empty pane speak it', async ($, on) => {
+  mock.clock(on)
+  mock.store(on)
+  on('command.register', () => ({ value: { command: 'rsvp' } }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.messages', () => ({
+    value: [{ role: 'assistant', text: 'One two three.', toolUses: [] }],
+  }))
+
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ran = await $.command.run({
+    command: 'rsvp',
+    args: '',
+    origin: { kind: 'composer' },
+    presentation: { isFullscreen: true, columns: 160 },
+  })
+  expect(ran.text).toContain('Reader: 3 words')
+  expect(ran.text).toContain('Starts in 3 s')
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await statusShown(ui)).toContain('wpm')
+  expect(await statusShown(ui)).toContain('starts in 3')
+  expect(await ui.find({ key: 'word-back' })).toMatchObject({ props: { label: 'word back' } })
+  await ui.unmount()
 })
 
 test('with nothing read yet the pane says so, on every surface', async $ => {
