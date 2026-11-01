@@ -119,10 +119,10 @@ test('/rsvp reads the last answer, counts down, plays, and every seek waits for 
   expect(await statusShown(ui)).toContain('1/5')
 
   // The countdown holds the first word for three seconds.
-  expect(await statusShown(ui)).toContain('старт через 3')
+  expect(await ui.find({ type: 'Text', text: /старт через 3/ })).toBeDefined()
   await clock.advance(2000)
   expect(await wordShown(ui)).toBe('Раз')
-  expect(await statusShown(ui)).toContain('старт через 1')
+  expect(await ui.find({ type: 'Text', text: /старт через 1/ })).toBeDefined()
   await clock.advance(1000)
   expect(await wordShown(ui)).toBe('Раз')
   expect(await statusShown(ui)).toContain('идёт')
@@ -194,7 +194,8 @@ test('English is the default: the command answers and the empty pane speak it', 
 
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   expect(await statusShown(ui)).toContain('wpm')
-  expect(await statusShown(ui)).toContain('starts in 3')
+  expect(await ui.find({ type: 'Text', text: /starts in 3/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /ctrl\+x/ })).toBeDefined()
   expect(await ui.find({ key: 'word-back' })).toMatchObject({ props: { label: 'word back' } })
   await ui.unmount()
 })

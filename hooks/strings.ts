@@ -17,7 +17,7 @@ export type Strings = {
   playing: string
   pausedHint: string
   focusHint: string
-  focusedHint: string
+  keysTip: string
   play: string
   pause: string
   restart: string
@@ -44,8 +44,8 @@ const en: Strings = {
   startsIn: seconds => `starts in ${seconds}…`,
   playing: 'playing',
   pausedHint: 'paused · p resumes',
-  focusHint: 'For the keys to work, give the pane the focus: ctrl+x, then Tab, or click the pane.',
-  focusedHint: 'The keys below work; Esc closes the pane.',
+  focusHint: 'The pane has no focus, so the keys go to the prompt. Press ctrl+x, then Tab.',
+  keysTip: 'focus the pane: ctrl+x, then Tab (or click it) · close: Esc, or ctrl+x, then x',
   play: 'play',
   pause: 'pause',
   restart: 'restart',
@@ -81,8 +81,8 @@ const ru: Strings = {
   startsIn: seconds => `старт через ${seconds}…`,
   playing: 'идёт',
   pausedHint: 'пауза · p продолжит',
-  focusHint: 'Чтобы клавиши работали, передайте фокус панели: ctrl+x, затем Tab, или клик по панели.',
-  focusedHint: 'Клавиши ниже работают; Esc закрывает панель.',
+  focusHint: 'Панель без фокуса, клавиши уходят в строку ввода. Нажмите ctrl+x, затем Tab.',
+  keysTip: 'фокус в панель: ctrl+x, затем Tab (или клик) · закрыть: Esc, или ctrl+x, затем x',
   play: 'пуск',
   pause: 'пауза',
   restart: 'сначала',

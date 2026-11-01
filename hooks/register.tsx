@@ -26,7 +26,7 @@ const REFOCUS_MS = 500
 // The texts of the language the person chose; set when the module registers.
 let t: Strings = STRINGS.en
 
-const paneArgs = () => ({ id: PANE, title: t.paneTitle, focus: true, closeOnEscape: true, rows: 9 }) as const
+const paneArgs = () => ({ id: PANE, title: t.paneTitle, focus: true, closeOnEscape: true, rows: 11 }) as const
 
 // Bump the shape tag when Word's fields change: an earlier version's value
 // outlives a reload and is then read as the initial one.
@@ -263,12 +263,15 @@ export const register: Register = (on, options) => {
     const { pad, before, pivot, after, pivotColumn } = layout(word.text, columns)
     const marker = ' '.repeat(pivotColumn)
     const percent = Math.round(((at + 1) / list.length) * 100)
-    const state = left > 0 ? t.startsIn(left) : playing ? t.playing : t.pausedHint
+    const state = playing ? t.playing : t.pausedHint
+    const counting = left > 0
     const status = `${at + 1}/${list.length} · ${percent}% · ${speed} ${t.wpmUnit} · ${state}`
 
     return (
       <Box flexDirection="column" paddingX={1}>
-        <Text dimColor>{marker}▾</Text>
+        <Text dimColor={!counting} color={counting ? "warning" : undefined}>
+          {marker}▾
+        </Text>
         <Box key="word" flexDirection="row">
           <Text>
             {pad}
@@ -279,15 +282,18 @@ export const register: Register = (on, options) => {
           </Text>
           <Text>{after}</Text>
         </Box>
-        <Text dimColor>{marker}▴</Text>
+        <Text dimColor={!counting} color={counting ? "warning" : undefined}>
+          {marker}▴
+        </Text>
+        {counting && (
+          <Text color="warning" weight="bold">
+            {t.startsIn(left)}
+          </Text>
+        )}
         <Text dimColor tabular>
           {status}
         </Text>
-        {e.props.isFocused ? (
-          <Text dimColor>{t.focusedHint}</Text>
-        ) : (
-          <Text color="warning">{t.focusHint}</Text>
-        )}
+        {!e.props.isFocused && <Text color="warning">{t.focusHint}</Text>}
         <Box flexDirection="row" flexWrap="wrap" gap={2}>
           <Button
             key="toggle"
@@ -350,6 +356,7 @@ export const register: Register = (on, options) => {
             {t.faster}
           </Button>
         </Box>
+        <Text dimColor>{t.keysTip}</Text>
       </Box>
     )
   })
