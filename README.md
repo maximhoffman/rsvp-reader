@@ -2,7 +2,7 @@
 
 Speed-read Claude's last answer inside the Claude Code session, one word at a time, Spritz style (rapid serial visual presentation). The pane shows a single word with its recognition-point letter highlighted in red at a fixed column, so the eye never moves; reading speed is adjustable.
 
-![The reader pane streaming an answer inside Claude Code](docs/explainer/teaser.gif)
+![The reader pane streaming an answer inside Claude Code](docs/explainer/pane-demo.gif)
 
 *Eight seconds of the explainer. The full 60-second video with narration is attached to the [latest release](https://github.com/maximhoffman/rsvp-reader/releases/latest) (`rsvp-reader-explainer.mp4`); the animated page it is rendered from is `docs/explainer/index.html` (open it in a browser and press Play).*
 

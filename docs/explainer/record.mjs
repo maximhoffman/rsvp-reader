@@ -17,7 +17,7 @@
 // The equivalent shell lines:
 //   hyperframes render docs/explainer -f 30 -q delivery -o explainer-silent.mp4
 //   ffmpeg -y -i explainer-silent.mp4 -i soundtrack.m4a -map 0:v:0 -map 1:a:0 -c copy -shortest -movflags +faststart rsvp-reader-explainer.mp4
-//   ffmpeg -y -ss 28 -t 8 -i rsvp-reader-explainer.mp4 -vf "fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" teaser.gif
+//   ffmpeg -y -ss 28 -t 8 -i rsvp-reader-explainer.mp4 -vf "fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" pane-demo.gif
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, statSync } from 'node:fs'
@@ -51,7 +51,7 @@ function hyperframes() {
 
 const silent = join(workDir, 'explainer-silent.mp4')
 const mp4 = join(here, 'rsvp-reader-explainer.mp4')
-const gif = join(here, 'teaser.gif')
+const gif = join(here, 'pane-demo.gif')
 const soundtrack = join(here, 'soundtrack.m4a')
 
 const [bin, pre] = hyperframes()
