@@ -1,0 +1,6 @@
+{
+  "name": "rsvp-reader",
+  "description": "Speed-read Claude's last answer word by word (RSVP, Spritz style) in a pane inside Claude Code",
+  "owner": { "name": "Max Hoffman" },
+  "plugins": [{ "name": "rsvp-reader", "source": "./" }]
+}

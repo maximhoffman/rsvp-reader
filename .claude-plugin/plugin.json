@@ -1,0 +1,8 @@
+{
+  "name": "rsvp-reader",
+  "version": "0.1.0",
+  "description": "Speed-read the last answer word by word (RSVP / Spritz style) in a pane: /rsvp",
+  "author": { "name": "Max Hoffman" },
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
