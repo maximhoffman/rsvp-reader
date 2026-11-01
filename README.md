@@ -2,9 +2,9 @@
 
 Speed-read Claude's last answer inside the Claude Code session, one word at a time, Spritz style (rapid serial visual presentation). The pane shows a single word with its recognition-point letter highlighted in red at a fixed column, so the eye never moves; reading speed is adjustable.
 
-![The reader pane: one word with its recognition letter in red, the status line, the keys](docs/pane.svg)
+![The reader pane streaming an answer inside Claude Code](docs/explainer/teaser.gif)
 
-*A rendering of the pane as the terminal draws it, docked beside the transcript.*
+*Eight seconds of the explainer. The full 60-second video with narration is attached to the [latest release](https://github.com/maximhoffman/rsvp-reader/releases/latest) (`rsvp-reader-explainer.mp4`); the animated page it is rendered from is `docs/explainer/index.html` (open it in a browser and press Play).*
 
 ## Use
 
@@ -35,3 +35,7 @@ Answer `y` to add the marketplace, then pick a scope (user scope installs it for
 ## License
 
 MIT
+
+## Explainer video
+
+`docs/explainer/` holds the explainer as code: `index.html` is the 60-second animation (every scene a function of the master clock), `record.mjs` renders it frame by frame with [HyperFrames](https://github.com/heygen-com/hyperframes) and muxes the soundtrack, `soundtrack.mjs` builds the mix from `audio/` (ElevenLabs narration and music, synthesized sound effects timed from the page's own cues). The rendered MP4 is not in git; download it from the release.

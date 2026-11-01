@@ -1,0 +1,6 @@
+1|0|6|Reading looks smooth. It isn't. Your eyes jump from word to word, and every jump costs time.
+2|6|18|RSVP shows one word at a time, in one spot. A red letter anchors your eye, so nothing moves but the words.
+3|18|28|Three hundred fifty words a minute feels easy. Five hundred is fast. No scrolling, no re-reading.
+4|28|48|Inside Claude Code, it's a pane. Claude writes a long answer. You type slash RSVP. The reader counts down, then streams the answer, word by word. Pause, skip a sentence, change speed, all from the keyboard. It also works in the Claude desktop app and in VS Code.
+5|48|56|One line to install. Open source, MIT.
+6|56|60|RSVP reader. Speed-read Claude's answers.

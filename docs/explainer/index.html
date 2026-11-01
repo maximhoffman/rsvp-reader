@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSVP Reader Explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400&family=Space+Grotesk:wght@400;600;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --stage: #0f1115;
+    --text: #e6e6e6;
+    --dim: #7a7f87;
+    --red: #ff5f56;
+    --blue: #4fc1ff;
+    --yellow: #f5c542;
+    --white: #ffffff;
+    --term: #15171c;
+    --term-bar: #1c1f25;
+    --frame: #555a63;
+    --line: #2a2e36;
+    --guide: #3a3f48;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    --grotesk: 'Space Grotesk', system-ui, sans-serif;
+    --serif: 'Source Serif 4', Georgia, serif;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--stage); color: var(--text); font-family: var(--grotesk); }
+  #stage {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+    transform-origin: 0 0; overflow: hidden; background: var(--stage);
+  }
+  .abs { position: absolute; }
+  .hidden { display: none !important; }
+  .red { color: var(--red); }
+  .mono { font-family: var(--mono); }
+
+  /* captions */
+  .cap {
+    position: absolute; font-family: var(--grotesk); font-weight: 600; color: var(--white);
+    letter-spacing: -0.02em; line-height: 1.08; white-space: nowrap; will-change: transform, clip-path;
+  }
+  .cap .mono { font-weight: 700; color: var(--blue); letter-spacing: 0; }
+
+  /* scene 1 */
+  #prose { left: 170px; top: 380px; font-family: var(--serif); font-size: 54px; color: var(--text); white-space: nowrap; }
+  #prose span { display: inline-block; will-change: transform; }
+  #eye {
+    width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,95,86,0.95) 0 7px, rgba(255,95,86,0.22) 8px 100%); border: 2px solid rgba(255,95,86,0.6); box-sizing: border-box;
+    box-shadow: 0 0 24px rgba(255,95,86,0.35); left: 0; top: 0; will-change: transform;
+  }
+  .trail { width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid var(--red); left: 0; top: 0; }
+
+  /* scene 2 + 3 */
+  .guide { width: 2px; left: calc(806.4px - 1px); background: var(--guide); }
+  .marker { font-family: var(--mono); font-size: 44px; color: var(--dim); width: 2ch; text-align: center; margin-left: -1ch; left: 806.4px; line-height: 1; }
+  .word {
+    position: absolute; white-space: pre; font-family: var(--mono);
+    left: calc(var(--x) - (var(--at, 0) + 0.5) * 1ch);
+  }
+  .word .pv { color: var(--red); font-weight: 700; }
+  #big { --x: 806.4px; top: 474px; font-size: 120px; line-height: 132px; color: var(--text); transform-origin: 806.4px 50%; }
+  #counter { right: 120px; top: 110px; text-align: right; }
+  #wpmNum { font-family: var(--grotesk); font-weight: 700; font-size: 220px; line-height: 0.9; color: var(--white); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+  #wpmUnit { font-family: var(--grotesk); font-weight: 600; font-size: 60px; color: var(--dim); margin-left: 14px; }
+  #msPer { font-family: var(--mono); font-size: 30px; color: var(--dim); margin-top: 18px; }
+  #ticks { right: 120px; top: 392px; width: 560px; height: 30px; overflow: hidden; }
+  #ticks i { position: absolute; top: 0; width: 3px; height: 30px; background: var(--red); left: 0; }
+
+  /* scene 4: terminal */
+  #term {
+    left: 100px; top: 52px; width: 1720px; height: 800px; border-radius: 14px; background: var(--term);
+    border: 1px solid var(--line); box-shadow: 0 40px 120px rgba(0,0,0,0.55); overflow: hidden;
+    font-family: var(--mono); font-size: 22px; line-height: 34px; color: var(--text);
+  }
+  #termBar { height: 48px; background: var(--term-bar); border-bottom: 1px solid var(--line); position: relative; }
+  #termBar .dots { position: absolute; left: 20px; top: 17px; display: flex; gap: 9px; }
+  #termBar .dots i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+  #termBar .title { position: absolute; left: 0; right: 0; top: 0; line-height: 48px; text-align: center; font-family: var(--grotesk); font-weight: 600; font-size: 20px; color: #a9aeb6; }
+  #termBody { position: absolute; left: 0; right: 0; top: 49px; bottom: 0; }
+  #transcript { position: absolute; left: 30px; top: 18px; width: 1660px; }
+  #transcript .u { color: #c9ccd2; }
+  #transcript .u b { color: var(--dim); font-weight: 400; }
+  #answer { position: relative; padding-left: 2ch; }
+  #answer::before { content: '●'; position: absolute; left: 0; color: var(--text); }
+  #more { padding-left: 2ch; color: var(--dim); }
+  #echo .out { color: var(--dim); padding-left: 2ch; }
+  #prompt {
+    position: absolute; left: 30px; right: 30px; bottom: 24px; height: 62px; border: 1.5px solid #3b4049;
+    border-radius: 8px; padding: 0 18px; line-height: 59px; color: var(--text); box-sizing: border-box;
+  }
+  #prompt b { color: var(--dim); font-weight: 400; }
+  #caret { display: inline-block; width: 1ch; height: 28px; background: var(--text); vertical-align: -6px; }
+  #pane { right: 30px; top: 16px; width: 900px; height: 470px; }
+  #paneFrame { position: absolute; inset: 14px 0 0 0; border: 1.5px solid var(--frame); border-radius: 8px; }
+  #paneTitle { position: absolute; left: 18px; top: 0; padding: 0 8px; background: var(--term); color: #bbbbbb; font-size: 20px; line-height: 28px; }
+  #paneX { position: absolute; right: 18px; top: 0; padding: 0 6px; background: var(--term); color: #888; font-size: 20px; line-height: 28px; }
+  #paneBody { position: absolute; left: 22px; right: 22px; top: 40px; padding-left: 1ch; }
+  #paneBody .row { height: 34px; white-space: pre; }
+  #paneBody .mk { color: var(--dim); }
+  #paneBody .mk.count { color: var(--yellow); }
+  #paneWordRow { height: 54px !important; position: relative; }
+  #paneWord { --x: 297px; top: 0; font-size: 36px; line-height: 54px; }
+  #paneCount { color: var(--yellow); font-weight: 700; }
+  #paneStatus { color: #9a9a9a; font-variant-numeric: tabular-nums; }
+  .keys { margin-top: 0; }
+  .keys .k { color: var(--blue); }
+  .keys .btn { border-radius: 4px; padding: 2px 0; }
+  .keys .btn.hit { background: rgba(79,193,255,0.22); box-shadow: 0 0 0 6px rgba(79,193,255,0.22); }
+  #paneTip { color: #777; font-size: 16px; line-height: 26px; white-space: normal; margin-top: 8px; padding-right: 10px; }
+  #keycap {
+    left: 330px; top: 525px; display: flex; align-items: center; gap: 22px;
+    padding: 18px 26px 18px 18px; background: #20242b; border: 1px solid #3b4049; border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5); font-family: var(--grotesk); font-weight: 600; font-size: 34px; color: var(--white);
+  }
+  #keycap .cap-key {
+    width: 78px; height: 78px; border-radius: 14px; background: #2d323b; border: 2px solid #4a515c;
+    border-bottom-width: 7px; display: grid; place-items: center; font-family: var(--mono); font-size: 44px; color: var(--blue);
+    box-sizing: border-box;
+  }
+  #badge {
+    right: 100px; top: 892px; padding: 14px 24px; border: 1.5px solid #3b4049; border-radius: 999px;
+    font-family: var(--grotesk); font-weight: 500; font-size: 28px; color: var(--text); background: #171a20;
+    display: flex; align-items: center; gap: 14px;
+  }
+  #badge i { width: 12px; height: 12px; border-radius: 50%; background: var(--blue); display: block; }
+
+  /* scene 5 */
+  #install {
+    left: 137px; top: 400px; padding: 30px 36px; border: 2px solid #3b4049; border-radius: 12px; background: #15171c;
+    font-family: var(--mono); font-size: 38px; line-height: 50px; white-space: pre; color: var(--text);
+    min-width: 1574px; box-sizing: border-box;
+  }
+  #install b { color: var(--dim); font-weight: 400; }
+  #install .caret { display: inline-block; width: 1ch; height: 40px; background: var(--text); vertical-align: -7px; }
+  #installLabel { left: 137px; top: 340px; font-family: var(--mono); font-size: 24px; color: var(--dim); letter-spacing: 0.08em; }
+  #installSub { left: 173px; top: 560px; font-family: var(--mono); font-size: 28px; color: var(--dim); }
+  #installSub .k { color: var(--blue); }
+
+  /* scene 6 */
+  #lockup { --x: 806.4px; top: 410px; font-size: 150px; line-height: 160px; font-weight: 700; color: var(--white); transform-origin: 806.4px 50%; }
+  #endMarkTop { top: 352px; }
+  #endMarkBot { top: 584px; }
+  #url { left: 491px; top: 660px; font-family: var(--mono); font-size: 44px; color: var(--text); }
+  #tagline { left: 491px; top: 730px; font-family: var(--grotesk); font-size: 34px; font-weight: 500; color: var(--dim); }
+
+  /* controls */
+  #playBtn, #replayBtn {
+    position: fixed; z-index: 10; border: 0; cursor: pointer; font-family: var(--grotesk); font-weight: 600;
+    color: var(--stage); background: var(--white);
+  }
+  #playBtn { left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 26px; padding: 18px 38px; border-radius: 999px; }
+  #replayBtn { right: 18px; bottom: 18px; font-size: 14px; padding: 8px 14px; border-radius: 999px; background: #2a2e36; color: var(--text); }
+  #muteBtn {
+    position: fixed; z-index: 10; left: 18px; bottom: 18px; border: 0; cursor: pointer; font-family: var(--grotesk);
+    font-weight: 600; font-size: 14px; padding: 8px 14px; border-radius: 999px; background: #2a2e36; color: var(--text);
+  }
+  #playBtn:focus-visible, #replayBtn:focus-visible, #muteBtn:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+</style>
+<script>
+  // HyperFrames (render.mjs) holds the first frame on this promise; the module
+  // below resolves it once fonts, the Motion springs and layout are measured.
+  window.__hf = window.__hf || {};
+  window.__hf.buildReady = window.__hf.buildReady || {};
+  window.__hf.buildReady.explainer = new Promise(resolve => { window.__explainerBuilt = resolve; });
+  // HyperFrames seeks by dispatching "hf-seek" with the frame's time. A seek can
+  // arrive before the module has loaded, so the latest one is kept and replayed.
+  window.__hfLastSeek = null;
+  addEventListener('hf-seek', e => {
+    window.__hfLastSeek = e.detail.time;
+    if (window.__explainerSeek) window.__explainerSeek(e.detail.time);
+  });
+</script>
+</head>
+<body>
+<!-- HyperFrames root: one 60 s composition; frames are drawn by render(t) on each "hf-seek". -->
+<div id="stage" data-composition-id="explainer" data-no-timeline data-start="0" data-duration="60" data-width="1920" data-height="1080">
+  <!-- scene 1 -->
+  <div id="s1" class="abs" style="inset:0">
+    <div id="trails" class="abs" style="inset:0"></div>
+    <div id="prose" class="abs"></div>
+    <div id="eye" class="abs"></div>
+  </div>
+
+  <!-- scene 2 + 3 -->
+  <div id="s2" class="abs hidden" style="inset:0">
+    <div id="guideTop" class="abs guide" style="top:250px;height:150px;transform-origin:50% 0"></div>
+    <div id="guideBot" class="abs guide" style="top:680px;height:96px;transform-origin:50% 100%"></div>
+    <div id="mkTop" class="abs marker" style="top:418px">▾</div>
+    <div id="mkBot" class="abs marker" style="top:618px">▴</div>
+    <div id="big" class="word"></div>
+    <div id="counter" class="abs">
+      <div><span id="wpmNum">200</span><span id="wpmUnit">wpm</span></div>
+      <div id="msPer">300 ms per word</div>
+    </div>
+    <div id="ticks" class="abs"></div>
+  </div>
+
+  <!-- scene 4 -->
+  <div id="s4" class="abs hidden" style="inset:0">
+    <div id="term" class="abs">
+      <div id="termBar">
+        <div class="dots"><i style="background:#ff5f56"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+        <div class="title">Claude Code</div>
+      </div>
+      <div id="termBody">
+        <div id="transcript">
+          <div class="u"><b>&gt;</b> how does the cache layer work?</div>
+          <div style="height:12px"></div>
+          <div id="answerWrap">
+            <div id="answer"></div>
+            <div id="more">…</div>
+          </div>
+          <div id="echo">
+            <div style="height:12px"></div>
+            <div class="u"><b>&gt;</b> /rsvp</div>
+            <div class="out">⎿ Reader: 412 words, 350 wpm. Starts in 3 s; Esc closes the pane.</div>
+          </div>
+        </div>
+        <div id="pane" class="abs">
+          <div id="paneFrame"></div>
+          <div id="paneTitle">Reader</div>
+          <div id="paneX">[x]</div>
+          <div id="paneBody">
+            <div id="paneMkTop" class="row mk"></div>
+            <div id="paneWordRow" class="row"><div id="paneWord" class="word"></div></div>
+            <div id="paneMkBot" class="row mk"></div>
+            <div id="paneCount" class="row"></div>
+            <div id="paneStatus" class="row"></div>
+            <div class="row keys"><span class="btn" id="btnP"><span class="k">p</span>: <span id="btnPLabel">pause</span></span>   <span class="btn"><span class="k">r</span>: restart</span>   <span class="btn"><span class="k">q</span>: close</span></div>
+            <div class="row keys"><span class="btn"><span class="k">h</span>: word back</span>   <span class="btn"><span class="k">l</span>: word forward</span></div>
+            <div class="row keys"><span class="btn"><span class="k">j</span>: sentence start</span>   <span class="btn" id="btnK"><span class="k">k</span>: next sentence</span></div>
+            <div class="row keys"><span class="btn"><span class="k">a</span>: slower</span>   <span class="btn"><span class="k">d</span>: faster</span></div>
+            <div id="paneTip">focus the pane: ctrl+x, then Tab (or click it) · close: Esc, or ctrl+x, then x</div>
+          </div>
+        </div>
+        <div id="prompt"><b>&gt;</b> <span id="typed"></span><span id="caret"></span></div>
+        <div id="keycap" class="abs"><div class="cap-key" id="keyLetter">k</div><div id="keyLabel">next sentence</div></div>
+      </div>
+    </div>
+    <div id="badge" class="abs"><i></i>also in the Claude desktop app and VS Code</div>
+  </div>
+
+  <!-- scene 5 -->
+  <div id="s5" class="abs hidden" style="inset:0">
+    <div id="installLabel" class="abs">INSTALL · IN CLAUDE CODE</div>
+    <div id="install" class="abs"><b>&gt;</b> <span id="installTyped"></span><span class="caret" id="installCaret"></span></div>
+    <div id="installSub" class="abs">answer <span class="k">y</span>, pick a scope. done.</div>
+  </div>
+
+  <!-- scene 6 -->
+  <div id="s6" class="abs hidden" style="inset:0">
+    <div id="endMarkTop" class="abs marker">▾</div>
+    <div id="lockup" class="word"></div>
+    <div id="endMarkBot" class="abs marker">▴</div>
+    <div id="url" class="abs">github.com/maximhoffman/rsvp-reader</div>
+    <div id="tagline" class="abs">Speed-read Claude's answers.</div>
+  </div>
+
+  <div id="caps" class="abs" style="inset:0;pointer-events:none"></div>
+</div>
+<button id="playBtn" class="hidden" type="button">▶ Play</button>
+<button id="replayBtn" class="hidden" type="button">replay</button>
+<button id="muteBtn" class="hidden" type="button" aria-pressed="false">sound on</button>
+
+<script type="module">
+// ---------- motion (pinned) with a local fallback ----------
+let M = {};
+try {
+  M = await import('https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm');
+} catch {
+  M = {};
+}
+window.__motionLoaded = typeof M.spring === 'function';
+
+const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
+const prog = (t, a, b) => clamp01((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const easeOut = M.easeOut ?? (p => 1 - (1 - p) ** 3);
+const easeIn = M.easeIn ?? (p => p * p * p);
+const easeInOut = M.easeInOut ?? (p => (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2));
+const expoOut = M.cubicBezier ? M.cubicBezier(0.16, 1, 0.3, 1) : (p => (p === 1 ? 1 : 1 - 2 ** (-10 * p)));
+const backOut = M.backOut ?? (p => 1 + 2.70158 * (p - 1) ** 3 + 1.70158 * (p - 1) ** 2);
+
+/** A spring curve sampled once into a table: f(seconds since start) -> 0..1 (with overshoot). */
+function makeSpring(opts) {
+  const ms = 3000;
+  const table = new Float32Array(ms + 1);
+  if (typeof M.spring === 'function') {
+    const gen = M.spring({ keyframes: [0, 1], ...opts });
+    for (let i = 0; i <= ms; i += 1) table[i] = gen.next(i).value;
+  } else {
+    const k = opts.stiffness ?? 100, c = opts.damping ?? 10, m = opts.mass ?? 1;
+    let x = 0, v = 0;
+    for (let i = 0; i <= ms; i += 1) {
+      table[i] = x;
+      for (let s = 0; s < 4; s += 1) {
+        const a = (-k * (x - 1) - c * v) / m;
+        v += a * 0.00025;
+        x += v * 0.00025;
+      }
+    }
+  }
+  return s => (s <= 0 ? 0 : s * 1000 >= ms ? 1 : table[Math.round(s * 1000)]);
+}
+const springSnap = makeSpring({ stiffness: 420, damping: 28, mass: 1 });
+const springSoft = makeSpring({ stiffness: 170, damping: 22, mass: 1 });
+const springPop = makeSpring({ stiffness: 520, damping: 18, mass: 1 });
+
+// ---------- the plugin's real rules (hooks/text.ts) ----------
+const orpIndex = word => {
+  const n = [...word].length;
+  if (n <= 1) return 0;
+  if (n <= 5) return 1;
+  if (n <= 9) return 2;
+  if (n <= 13) return 3;
+  return 4;
+};
+const stopOf = token => {
+  const bare = token.replace(/["'»)\]}*]+$/, '');
+  if (/[.!?…]$/.test(bare)) return 'period';
+  if (/[,;:]$/.test(bare)) return 'comma';
+  return 'none';
+};
+/** Seconds a token stays on screen: base from wpm, +0.3 over 8 letters, +0.3 over 13, +0.5 comma, +1.2 sentence end. */
+const delayFor = (word, wpm) => {
+  const base = 60000 / wpm;
+  let factor = 1;
+  const length = [...word].length;
+  if (length > 8) factor += 0.3;
+  if (length > 13) factor += 0.3;
+  const stop = stopOf(word);
+  if (stop === 'comma') factor += 0.5;
+  if (stop === 'period') factor += 1.2;
+  return Math.round(base * factor) / 1000;
+};
+const tokenize = s => s.split(/\s+/).filter(Boolean);
+const nextSentenceStart = (words, index) => {
+  let i = index;
+  while (i < words.length - 1 && stopOf(words[i]) !== 'period') i += 1;
+  return Math.min(i + 1, words.length - 1);
+};
+
+/** Absolute start times of each token from t0, at the speed wpmAt(time). */
+function schedule(words, startIndex, t0, tEnd, wpmAt, { loop = false, stopAfter = Infinity } = {}) {
+  const out = [];
+  let t = t0;
+  let i = startIndex;
+  while (t < tEnd && out.length < stopAfter) {
+    if (i >= words.length) {
+      if (!loop) break;
+      i = 0;
+    }
+    out.push({ t, i, w: words[i] });
+    t += delayFor(words[i], wpmAt(t));
+    i += 1;
+  }
+  return out;
+}
+function entryAt(sched, t) {
+  let lo = 0, hi = sched.length - 1, found = null;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (sched[mid].t <= t) { found = sched[mid]; lo = mid + 1; } else hi = mid - 1;
+  }
+  return found;
+}
+
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function setWord(el, word) {
+  if (el._w === word) return;
+  el._w = word;
+  const letters = [...word];
+  const at = orpIndex(word);
+  el.style.setProperty('--at', at);
+  el.innerHTML = `<span>${esc(letters.slice(0, at).join(''))}</span><span class="pv">${esc(letters[at] ?? '')}</span><span>${esc(letters.slice(at + 1).join(''))}</span>`;
+}
+
+const $ = id => document.getElementById(id);
+const show = (el, on) => el.classList.toggle('hidden', !on);
+const style = (el, transform, opacity, clip) => {
+  el.style.transform = transform ?? '';
+  el.style.opacity = opacity ?? '';
+  el.style.clipPath = clip ?? '';
+};
+
+// ---------- texts ----------
+const DEMO = tokenize("Reading is mostly eye movement. Each jump costs time, and every line end costs more. Show one word at a fixed point and the eye stops travelling. Add a red anchor letter and the brain locks on faster. That is RSVP: rapid serial visual presentation. Comfortable at three hundred words a minute, fast at five hundred.");
+const PROSE = 'Reading looks smooth, but your eyes jump from word to word.';
+const ANSWER = 'The cache layer sits between the API handlers and the database. Every read first checks Redis, using a key built from the route and the user id. On a miss, the handler queries Postgres, writes the result back with a five minute expiry, and returns it. Writes go the other way: the handler updates Postgres first, then deletes the matching keys, so the next read refills them. Two things can still go wrong. A burst of misses on one hot key can stampede the database, so the first miss takes a short lock while the others wait.';
+const ANSWER_WORDS = tokenize(ANSWER);
+const TOTAL = 412;
+const INSTALL = '/plugin install rsvp-reader --marketplace maximhoffman/rsvp-reader';
+
+// ---------- captions ----------
+const CAPS = [
+  { html: 'Your eyes spend most of reading… moving.', tin: 1.0, tout: 5.75, x: 170, y: 560, size: 72 },
+  { html: 'Not reading. <span class="red">Moving.</span>', tin: 3.1, tout: 5.85, x: 170, y: 660, size: 72 },
+  { html: 'RSVP: one word at a time, in one spot.', tin: 8.4, tout: 17.6, x: 170, y: 846, size: 60 },
+  { html: 'A red letter anchors your eye. Zero movement.', tin: 10.2, tout: 17.7, x: 170, y: 930, size: 44, color: 'var(--text)', weight: 500 },
+  { html: 'Comfortable at 350. Fast at 500.<br>No scrolling, no re-reading.', tin: 20.9, tout: 27.5, x: 170, y: 806, size: 64 },
+  { html: 'Claude just wrote 400 words.', tin: 29.0, tout: 31.0, x: 104, y: 900, size: 58 },
+  { html: 'Type <span class="mono">/rsvp</span>.', tin: 31.15, tout: 34.6, x: 104, y: 900, size: 58 },
+  { html: 'Read it in 70 seconds, eyes still.', tin: 34.75, tout: 47.3, x: 104, y: 900, size: 58 },
+  { html: 'One line to install. Open source, MIT.', tin: 52.0, tout: 55.6, x: 137, y: 700, size: 64 },
+];
+const capLayer = $('caps');
+for (const c of CAPS) {
+  const el = document.createElement('div');
+  el.className = 'cap hidden';
+  el.innerHTML = c.html;
+  Object.assign(el.style, { left: `${c.x}px`, top: `${c.y}px`, fontSize: `${c.size}px` });
+  if (c.color) el.style.color = c.color;
+  if (c.weight) el.style.fontWeight = c.weight;
+  capLayer.appendChild(el);
+  c.el = el;
+}
+function renderCaps(t) {
+  for (const c of CAPS) {
+    const pout = prog(t, c.tout, c.tout + 0.4);
+    const on = t >= c.tin && pout < 1;
+    show(c.el, on);
+    if (!on) continue;
+    const e = expoOut(prog(t, c.tin, c.tin + 0.6));
+    const o = easeIn(pout);
+    style(c.el, `translateY(${(1 - e) * 34 - o * 24}px)`, '', `inset(-30% ${(1 - e) * 100}% -30% ${o * 100}%)`);
+  }
+}
+
+// ---------- scene 1 ----------
+const prose = $('prose');
+prose.innerHTML = PROSE.split(' ').map(w => `<span>${esc(w)}</span>`).join(' ');
+const proseSpans = [...prose.children];
+const FIX_SEQ = [0, 2, 3, 5, 4, 6, 8, 10, 0, 2, 4, 5, 7, 9];
+const FIX_T0 = 0.45, FIX_DT = 0.41, HOP = 0.06;
+let fix = [];
+const trails = [];
+function measureProse() {
+  const left = prose.offsetLeft, top = prose.offsetTop;
+  const geo = proseSpans.map(s => ({ x: left + s.offsetLeft, w: s.offsetWidth, y: top + s.offsetTop, h: s.offsetHeight }));
+  fix = FIX_SEQ.map((k, n) => ({ x: geo[k].x + geo[k].w * 0.38, y: geo[k].y + geo[k].h * 0.52, t: FIX_T0 + n * FIX_DT }));
+  proseSpans.forEach((s, j) => { s._cx = geo[j].x + geo[j].w / 2; s._cy = geo[j].y + geo[j].h / 2; });
+  $('trails').innerHTML = '';
+  trails.length = 0;
+  for (const f of fix) {
+    const d = document.createElement('div');
+    d.className = 'abs trail';
+    $('trails').appendChild(d);
+    trails.push(d);
+    d.style.left = `${f.x}px`;
+    d.style.top = `${f.y}px`;
+  }
+}
+function eyePos(t) {
+  if (t <= fix[0].t) return fix[0];
+  for (let n = fix.length - 1; n >= 1; n -= 1) {
+    if (t >= fix[n].t - HOP) {
+      const p = easeOut(prog(t, fix[n].t - HOP, fix[n].t));
+      return { x: lerp(fix[n - 1].x, fix[n].x, p), y: lerp(fix[n - 1].y, fix[n].y, p) };
+    }
+  }
+  return fix[0];
+}
+const ORP_X = 806.4, MID_Y = 540;
+function renderS1(t) {
+  const on = t < 7.6;
+  show($('s1'), on);
+  if (!on) return;
+  // eye
+  const pos = eyePos(t);
+  const appear = springPop(t - 0.2);
+  const collapse = easeIn(prog(t, 5.9, 6.5));
+  const ex = lerp(pos.x, ORP_X, collapse), ey = lerp(pos.y, MID_Y, collapse);
+  style($('eye'), `translate(${ex}px, ${ey}px) scale(${appear * (1 - collapse)})`, `${1 - collapse}`);
+  // trails: the current pass is bright, earlier ones fade
+  fix.forEach((f, n) => {
+    const age = t - f.t;
+    const vis = age >= 0 ? Math.max(0.22, 0.75 - age * 0.15) : 0;
+    trails[n].style.opacity = `${vis * (1 - prog(t, 5.8, 6.2))}`;
+  });
+  // words fly one by one into the center spot
+  proseSpans.forEach((s, j) => {
+    const p = prog(t, 6.0 + j * 0.07, 6.0 + j * 0.07 + 0.55);
+    const e = easeIn(p);
+    const dx = (ORP_X - s._cx) * e, dy = (MID_Y - s._cy) * e;
+    style(s, `translate(${dx}px, ${dy}px) scale(${1 - 0.85 * e})`, `${1 - p * p}`);
+  });
+}
+
+// ---------- scene 2 + 3 ----------
+const S2_LAND = 7.75;
+const S2_STREAM = 12.4;
+const s2Sched = schedule(DEMO, 0, S2_STREAM, 18, () => 300, { stopAfter: 15 });
+const S3_STREAM = 18.6;
+const wpmStep = t => (t < 21.0 ? 200 : t < 23.5 ? 350 : 500);
+const s3Sched = schedule(DEMO, 15, S3_STREAM, 27.6, wpmStep, { loop: true });
+const tickPool = [];
+for (let n = 0; n < 48; n += 1) {
+  const i = document.createElement('i');
+  $('ticks').appendChild(i);
+  tickPool.push(i);
+}
+function wpmShown(t) {
+  if (t < 21.0) return 200;
+  if (t < 23.5) return Math.round(lerp(200, 350, easeInOut(prog(t, 21.0, 21.6))));
+  return Math.round(lerp(350, 500, easeInOut(prog(t, 23.5, 24.1))));
+}
+function renderS2(t) {
+  const on = t >= 6.3 && t < 28.4;
+  show($('s2'), on);
+  if (!on) return;
+  // the whole group leaves with an upward wipe into scene 4
+  const out = easeInOut(prog(t, 27.6, 28.3));
+  style($('s2'), `translateY(${-140 * out}px)`, '', out > 0 ? `inset(0 0 ${out * 100}% 0)` : '');
+
+  const g = expoOut(prog(t, 7.1, 7.9));
+  $('guideTop').style.transform = `scaleY(${g})`;
+  $('guideBot').style.transform = `scaleY(${g})`;
+  const mk = springPop(t - 8.0);
+  style($('mkTop'), `translateY(${(1 - mk) * -30}px)`, `${clamp01(mk)}`);
+  style($('mkBot'), `translateY(${(1 - mk) * 30}px)`, `${clamp01(mk)}`);
+
+  // the word
+  const big = $('big');
+  if (t < S2_STREAM) {
+    setWord(big, 'recognition');
+    const s = springSnap(t - S2_LAND);
+    const op = prog(t, S2_LAND, S2_LAND + 0.12);
+    style(big, `scale(${lerp(2.4, 1, s)})`, `${op}`);
+  } else if (t < S3_STREAM) {
+    setWord(big, entryAt(s2Sched, t).w);
+    style(big, '', '1');
+  } else {
+    setWord(big, entryAt(s3Sched, t).w);
+    style(big, '', '1');
+  }
+
+  // scene 3: counter and the word-change ticks
+  const cIn = springSoft(t - 18.0);
+  const cOn = t >= 18.0;
+  show($('counter'), cOn);
+  show($('ticks'), cOn);
+  if (cOn) {
+    style($('counter'), `translateX(${(1 - cIn) * 700}px)`, `${clamp01(cIn * 1.5)}`);
+    const w = wpmShown(t);
+    $('wpmNum').textContent = String(w);
+    $('msPer').textContent = `${Math.round(60000 / wpmStep(t))} ms per word`;
+    // a tick per word change in the last 3 s, scrolling left
+    let n = 0;
+    for (let k = s3Sched.length - 1; k >= 0 && n < tickPool.length; k -= 1) {
+      const age = t - s3Sched[k].t;
+      if (age < 0) continue;
+      if (age > 3.2) break;
+      const el = tickPool[n++];
+      el.style.display = 'block';
+      el.style.left = `${560 - age * 180}px`;
+      el.style.opacity = `${1 - age / 3.2}`;
+    }
+    for (; n < tickPool.length; n += 1) tickPool[n].style.display = 'none';
+    $('ticks').style.opacity = `${prog(t, 18.6, 18.9)}`;
+  }
+}
+
+// ---------- scene 4 ----------
+$('answer').textContent = ANSWER.slice(0, 452).replace(/\s+\S*$/, '');
+const T_TERM = 27.9;
+const T_LINES = 28.7;
+const T_TYPE = 31.45;
+const T_ENTER = 32.35;
+const T_PANE = 32.55;
+const T_COUNT = 33.0;
+const T_PLAY = T_COUNT + 3;
+const T_KEY_K = 41.0;
+const T_KEY_P = 43.2;
+const WPM4 = 350;
+const s4a = schedule(ANSWER_WORDS, 0, T_PLAY, T_KEY_K, () => WPM4);
+const kFrom = entryAt(s4a, T_KEY_K).i;
+const kTo = nextSentenceStart(ANSWER_WORDS, kFrom);
+const s4b = schedule(ANSWER_WORDS, kTo, T_KEY_P, 48.5, () => WPM4);
+const PIVOT_COL = Math.max(4, Math.floor(60 * 0.38));
+$('paneMkTop').textContent = `${' '.repeat(PIVOT_COL)}▾`;
+$('paneMkBot').textContent = `${' '.repeat(PIVOT_COL)}▴`;
+let answerLines = 4;
+
+function paneState(t) {
+  if (t < T_PLAY) {
+    const left = 3 - Math.floor(Math.max(0, t - T_COUNT));
+    return { i: 0, playing: true, count: Math.max(1, left) };
+  }
+  if (t < T_KEY_K) return { i: entryAt(s4a, t).i, playing: true, count: 0 };
+  if (t < T_KEY_P) return { i: kTo, playing: false, count: 0 };
+  const e = entryAt(s4b, t);
+  return { i: e ? e.i : kTo, playing: true, count: 0 };
+}
+
+function renderS4(t) {
+  const on = t >= T_TERM && t < 47.9;
+  show($('s4'), on);
+  if (!on) return;
+  const enter = springSoft(t - T_TERM);
+  const leave = easeIn(prog(t, 47.3, 47.85));
+  style($('term'), `translate(${-2100 * leave}px, ${(1 - enter) * 1000}px) scale(${1 - 0.12 * leave})`);
+
+  // transcript: the answer scrolls in line by line
+  const lh = 34;
+  const shown = Math.min(answerLines, Math.floor((t - T_LINES) / 0.32) + 1);
+  const wrap = $('answerWrap');
+  if (t < T_LINES) {
+    wrap.style.opacity = '0';
+  } else {
+    wrap.style.opacity = '1';
+    const full = shown >= answerLines;
+    const lineIn = expoOut(prog(t, T_LINES + (shown - 1) * 0.32, T_LINES + (shown - 1) * 0.32 + 0.3));
+    $('answer').style.clipPath = full && t > T_LINES + answerLines * 0.32 + 0.3 ? '' : `inset(0 0 ${(answerLines - shown + (1 - lineIn)) * lh}px 0)`;
+    $('more').style.opacity = `${prog(t, T_LINES + answerLines * 0.32, T_LINES + answerLines * 0.32 + 0.3)}`;
+  }
+  const paneIn = springSnap(t - T_PANE);
+  const narrow = t >= T_PANE;
+  $('transcript').style.width = narrow ? '760px' : '1660px';
+  show($('echo'), t >= T_ENTER);
+
+  // prompt typing
+  const typedN = t < T_TYPE ? 0 : Math.min(5, Math.floor((t - T_TYPE) / 0.13) + 1);
+  $('typed').textContent = t >= T_ENTER ? '' : '/rsvp'.slice(0, typedN);
+  const typing = t >= T_TYPE && t < T_ENTER;
+  $('caret').style.opacity = typing || Math.floor(t * 2) % 2 === 0 ? '1' : '0';
+  const flash = 1 - prog(t, T_ENTER, T_ENTER + 0.5);
+  $('prompt').style.borderColor = t >= T_ENTER && flash > 0 ? `rgba(79,193,255,${0.4 + flash * 0.6})` : '';
+
+  // pane
+  show($('pane'), t >= T_PANE);
+  $('pane').style.transform = `translateX(${(1 - paneIn) * 960}px)`;
+  const st = paneState(t);
+  const word = ANSWER_WORDS[st.i];
+  setWord($('paneWord'), word);
+  const counting = st.count > 0;
+  $('paneMkTop').classList.toggle('count', counting);
+  $('paneMkBot').classList.toggle('count', counting);
+  show($('paneCount'), counting);
+  $('paneCount').textContent = `starts in ${st.count}…`;
+  const pct = Math.round(((st.i + 1) / TOTAL) * 100);
+  $('paneStatus').textContent = `${st.i + 1}/${TOTAL} · ${pct}% · ${WPM4} wpm · ${st.playing ? 'playing' : 'paused · p resumes'}`;
+  $('btnPLabel').textContent = st.playing ? 'pause' : 'play';
+  $('btnK').classList.toggle('hit', t >= T_KEY_K && t < T_KEY_K + 0.5);
+  $('btnP').classList.toggle('hit', t >= T_KEY_P && t < T_KEY_P + 0.5);
+
+  // key presses
+  const kc = $('keycap');
+  let kStart = null;
+  if (t >= T_KEY_K - 0.35 && t < T_KEY_P - 0.4) {
+    kStart = T_KEY_K;
+    $('keyLetter').textContent = 'k';
+    $('keyLabel').textContent = 'next sentence';
+  } else if (t >= T_KEY_P - 0.35 && t < T_KEY_P + 1.3) {
+    kStart = T_KEY_P;
+    $('keyLetter').textContent = 'p';
+    $('keyLabel').textContent = 'play';
+  }
+  show(kc, kStart !== null);
+  if (kStart !== null) {
+    const kin = springPop(t - (kStart - 0.35));
+    const press = t >= kStart && t < kStart + 0.14 ? 0.88 : 1;
+    const kout = kStart === T_KEY_K ? easeIn(prog(t, T_KEY_P - 0.7, T_KEY_P - 0.4)) : easeIn(prog(t, T_KEY_P + 1.0, T_KEY_P + 1.3));
+    style(kc, `translateY(${(1 - kin) * 40 + kout * 30}px) scale(${press})`, `${clamp01(kin) * (1 - kout)}`);
+  }
+
+  // badge
+  const bOn = t >= 44.0;
+  show($('badge'), bOn && t < 47.7);
+  if (bOn) {
+    const b = springSoft(t - 44.0);
+    const bo = easeIn(prog(t, 47.3, 47.7));
+    style($('badge'), `translateY(${(1 - b) * 60}px)`, `${clamp01(b * 1.4) * (1 - bo)}`, `inset(-20% ${bo * 100}% -20% 0 round 999px)`);
+  }
+}
+
+// ---------- scene 5 ----------
+const T_INST = 47.75, T_TYPE5 = 48.7, CH5 = 0.04;
+function renderS5(t) {
+  const on = t >= T_INST && t < 56.3;
+  show($('s5'), on);
+  if (!on) return;
+  const inn = springSnap(t - T_INST);
+  const out = easeInOut(prog(t, 55.55, 56.15));
+  const clip = out > 0 ? `inset(-10% ${out * 100}% -10% 0)` : '';
+  style($('install'), `translateX(${(1 - inn) * 1900}px)`, '', clip);
+  style($('installLabel'), `translateX(${(1 - springSnap(t - T_INST - 0.12)) * 1900}px)`, '', clip);
+  const n = t < T_TYPE5 ? 0 : Math.min(INSTALL.length, Math.floor((t - T_TYPE5) / CH5) + 1);
+  $('installTyped').textContent = INSTALL.slice(0, n);
+  const typing = t >= T_TYPE5 && n < INSTALL.length;
+  $('installCaret').style.opacity = typing || Math.floor(t * 2) % 2 === 0 ? '1' : '0';
+  const doneT = T_TYPE5 + INSTALL.length * CH5;
+  const sub = expoOut(prog(t, doneT + 0.5, doneT + 1.1));
+  show($('installSub'), t >= doneT + 0.5);
+  style($('installSub'), `translateY(${(1 - sub) * 20}px)`, '', `inset(-20% ${(1 - sub) * 100}% -20% 0)`);
+  if (out > 0) $('installSub').style.clipPath = clip;
+}
+
+// ---------- scene 6 ----------
+setWord($('lockup'), 'rsvp-reader');
+function renderS6(t) {
+  const on = t >= 55.9;
+  show($('s6'), on);
+  if (!on) return;
+  const s = springSnap(t - 56.0);
+  style($('lockup'), `scale(${lerp(0.55, 1, s)})`, `${prog(t, 56.0, 56.15)}`);
+  const mk = springPop(t - 56.35);
+  style($('endMarkTop'), `translateY(${(1 - mk) * -30}px)`, `${clamp01(mk)}`);
+  style($('endMarkBot'), `translateY(${(1 - mk) * 30}px)`, `${clamp01(mk)}`);
+  const u = expoOut(prog(t, 56.6, 57.2));
+  style($('url'), `translateY(${(1 - u) * 24}px)`, '', `inset(-20% ${(1 - u) * 100}% -20% 0)`);
+  const g = expoOut(prog(t, 57.1, 57.7));
+  style($('tagline'), `translateY(${(1 - g) * 24}px)`, '', `inset(-20% ${(1 - g) * 100}% -20% 0)`);
+}
+
+// ---------- sound cue times, from the same schedules the picture uses ----------
+// Read by soundtrack.mjs so the clicks land on the frames where words change.
+const visibleUntil = (sched, end) => sched.filter(e => e.t < end).map(e => e.t);
+window.__soundEvents = {
+  // every change of the streamed word: scene 2, scene 3, scene 4 (skip a first
+  // entry that shows the word already on screen; the k seek is a change too)
+  wordClicks: [
+    ...visibleUntil(s2Sched, 18),
+    ...visibleUntil(s3Sched, 27.6),
+    ...visibleUntil(s4a, T_KEY_K).slice(1),
+    T_KEY_K,
+    ...visibleUntil(s4b, 47.3).slice(1),
+  ],
+  keyClicks: [
+    ...[...'/rsvp'].map((_, k) => T_TYPE + k * 0.13),
+    T_ENTER,
+    T_KEY_K,
+    T_KEY_P,
+    ...[...INSTALL].map((_, k) => T_TYPE5 + k * CH5),
+  ],
+  countdown: [T_COUNT, T_COUNT + 1, T_COUNT + 2],
+  playStart: T_PLAY,
+  whoosh: T_PANE - 0.05,
+};
+
+function render(t) {
+  renderS1(t);
+  renderS2(t);
+  renderS4(t);
+  renderS5(t);
+  renderS6(t);
+  renderCaps(t);
+}
+
+// ---------- stage scaling ----------
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  const stage = $('stage');
+  stage.style.transform = `scale(${s})`;
+  stage.style.left = `${(innerWidth - 1920 * s) / 2}px`;
+  stage.style.top = `${(innerHeight - 1080 * s) / 2}px`;
+}
+addEventListener('resize', fit);
+fit();
+
+// ---------- master clock ----------
+const DURATION = 60;
+const params = new URLSearchParams(location.search);
+const AUTOPLAY = params.get('autoplay') === '1';
+const SEEK = params.has('t') ? Number.parseFloat(params.get('t')) : null;
+const FREEZE = params.get('freeze') === '1';
+// Under HyperFrames (its runtime defines window.__timelines before page scripts run)
+// the renderer owns the clock: every frame is render(t) for t = frame / fps.
+const HYPERFRAMES = '__timelines' in window || window.__hfLastSeek !== null;
+let startPerf = null;
+let frozen = 0;
+const now = () => (startPerf === null ? frozen : Math.min(DURATION, (performance.now() - startPerf) / 1000));
+// The soundtrack follows the master clock; it plays only after a press of Play.
+const audio = AUTOPLAY || HYPERFRAMES ? null : new Audio('soundtrack.m4a');
+let soundOn = audio !== null;
+if (audio) audio.preload = 'auto';
+function syncAudio(t) {
+  if (!audio || startPerf === null) return;
+  if (!soundOn || t >= DURATION) {
+    if (!audio.paused) audio.pause();
+    return;
+  }
+  if (audio.paused) {
+    audio.currentTime = t;
+    audio.play().catch(soundFailed);
+  } else if (Math.abs(audio.currentTime - t) > 0.12) {
+    audio.currentTime = t;
+  }
+}
+function soundFailed() {
+  soundOn = false;
+  $('muteBtn').textContent = 'sound off';
+}
+function start(from) {
+  startPerf = performance.now() - from * 1000;
+  if (audio) {
+    audio.pause();
+    audio.currentTime = from;
+    if (soundOn) audio.play().catch(soundFailed);
+    show($('muteBtn'), true);
+  }
+  window.__t0Epoch = performance.timeOrigin + startPerf;
+  show($('playBtn'), false);
+  show($('replayBtn'), false);
+}
+window.__seek = t => { startPerf = null; frozen = t; render(t); };
+
+await document.fonts.ready;
+await Promise.all([
+  document.fonts.load("54px 'Source Serif 4'"),
+  document.fonts.load("600 72px 'Space Grotesk'"),
+  document.fonts.load("120px 'JetBrains Mono'"),
+  document.fonts.load("700 120px 'JetBrains Mono'"),
+]);
+measureProse();
+{
+  const a = $('answer');
+  const was = a.style.clipPath;
+  a.style.clipPath = '';
+  answerLines = Math.max(1, Math.round(a.offsetHeight / 34));
+  a.style.clipPath = was;
+}
+
+const clampT = t => Math.min(DURATION, Math.max(0, Number(t) || 0));
+if (HYPERFRAMES) {
+  // No Play button, no audio element, no requestAnimationFrame clock: the frame is
+  // drawn only when HyperFrames seeks, so a render is the same every time.
+  window.__explainerSeek = t => render(clampT(t));
+  render(clampT(window.__hfLastSeek ?? 0));
+  window.__ready = true;
+  window.__explainerBuilt();
+} else if (SEEK !== null && FREEZE) {
+  frozen = SEEK;
+} else if (AUTOPLAY || SEEK !== null) {
+  start(SEEK ?? 0);
+} else {
+  show($('playBtn'), true);
+}
+$('playBtn').addEventListener('click', () => start(0));
+$('replayBtn').addEventListener('click', () => start(0));
+$('muteBtn').addEventListener('click', () => {
+  soundOn = !soundOn;
+  $('muteBtn').textContent = soundOn ? 'sound on' : 'sound off';
+  $('muteBtn').setAttribute('aria-pressed', String(!soundOn));
+});
+
+function loop() {
+  const t = now();
+  render(t);
+  syncAudio(t);
+  if (!AUTOPLAY && startPerf !== null && t >= DURATION) show($('replayBtn'), true);
+  requestAnimationFrame(loop);
+}
+if (!HYPERFRAMES) {
+  window.__ready = true;
+  window.__explainerBuilt();
+  loop();
+}
+</script>
+</body>
+</html>
