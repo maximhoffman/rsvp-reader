@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330" font-family="SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="15">
+  <rect width="760" height="330" rx="8" fill="#1e1e1e"/>
+  <rect x="14" y="22" width="732" height="294" rx="6" fill="none" stroke="#555" stroke-width="1.5"/>
+  <rect x="24" y="12" width="80" height="20" fill="#1e1e1e"/>
+  <text x="30" y="27" fill="#bbb" font-size="13">Reader</text>
+  <text x="718" y="27" fill="#888" font-size="13">[x]</text>
+  <g fill="#d4d4d4" xml:space="preserve">
+    <text x="236" y="66" fill="#777">▾</text>
+    <text x="200" y="92" font-size="22">rec<tspan fill="#ff5f56" font-weight="bold">o</tspan>gnition</text>
+    <text x="236" y="118" fill="#777">▴</text>
+    <text x="40" y="146" fill="#9a9a9a">37/412 · 9% · 350 wpm · playing</text>
+    <text x="40" y="178"><tspan fill="#4fc1ff">p</tspan>: pause   <tspan fill="#4fc1ff">r</tspan>: restart   <tspan fill="#4fc1ff">q</tspan>: close</text>
+    <text x="40" y="202"><tspan fill="#4fc1ff">h</tspan>: word back   <tspan fill="#4fc1ff">l</tspan>: word forward</text>
+    <text x="40" y="226"><tspan fill="#4fc1ff">j</tspan>: sentence start   <tspan fill="#4fc1ff">k</tspan>: next sentence</text>
+    <text x="40" y="250"><tspan fill="#4fc1ff">a</tspan>: slower   <tspan fill="#4fc1ff">d</tspan>: faster</text>
+    <text x="40" y="290" fill="#777" font-size="13">focus the pane: ctrl+x, then Tab (or click it) · close: Esc, or ctrl+x, then x</text>
+  </g>
+</svg>

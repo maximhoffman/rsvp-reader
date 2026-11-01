@@ -2,6 +2,10 @@
 
 Speed-read Claude's last answer inside the Claude Code session, one word at a time, Spritz style (rapid serial visual presentation). The pane shows a single word with its recognition-point letter highlighted in red at a fixed column, so the eye never moves; reading speed is adjustable.
 
+![The reader pane: one word with its recognition letter in red, the status line, the keys](docs/pane.svg)
+
+*A rendering of the pane as the terminal draws it, docked beside the transcript.*
+
 ## Use
 
 Type `/rsvp` after an answer. The pane opens beside the transcript with the keyboard focus and starts playing. `/rsvp 450` also sets the speed in words per minute (100 to 1000; the setting is remembered across sessions).
