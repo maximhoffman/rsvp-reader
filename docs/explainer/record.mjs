@@ -17,7 +17,7 @@
 // The equivalent shell lines:
 //   hyperframes render docs/explainer -f 30 -q delivery -o explainer-silent.mp4
 //   ffmpeg -y -i explainer-silent.mp4 -i soundtrack.m4a -map 0:v:0 -map 1:a:0 -c copy -shortest -movflags +faststart rsvp-reader-explainer.mp4
-//   ffmpeg -y -ss 28 -t 8 -i rsvp-reader-explainer.mp4 -vf "fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" pane-demo.gif
+//   ffmpeg -y -ss 31 -t 15 -i rsvp-reader-explainer.mp4 -vf "fps=12,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" pane-demo.gif
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, statSync } from 'node:fs'
@@ -65,7 +65,7 @@ if (existsSync(soundtrack)) {
 } else {
   run('ffmpeg', ['-y', '-i', silent, '-map', '0:v:0', '-c', 'copy', '-movflags', '+faststart', mp4])
 }
-run('ffmpeg', ['-y', '-ss', '28', '-t', '8', '-i', mp4, '-vf',
-  'fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse', gif])
+run('ffmpeg', ['-y', '-ss', '31', '-t', '15', '-i', mp4, '-vf',
+  'fps=12,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse', gif])
 
 process.stdout.write(`${JSON.stringify({ fps, renderSeconds, silent, mp4, mp4Bytes: statSync(mp4).size, gif, gifBytes: statSync(gif).size, workFiles: readdirSync(workDir) })}\n`)

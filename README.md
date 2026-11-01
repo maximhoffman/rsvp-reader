@@ -4,7 +4,7 @@ Speed-read Claude's last answer inside the Claude Code session, one word at a ti
 
 ![The reader pane streaming an answer inside Claude Code](docs/explainer/pane-demo.gif)
 
-*Eight seconds of the explainer. The full 60-second video with narration is attached to the [latest release](https://github.com/maximhoffman/rsvp-reader/releases/latest) (`rsvp-reader-explainer.mp4`); the animated page it is rendered from is `docs/explainer/index.html` (open it in a browser and press Play).*
+*Fifteen seconds of the explainer: type `/rsvp`, the countdown, the word stream, a sentence skip and play. The full 60-second video with narration is attached to the [latest release](https://github.com/maximhoffman/rsvp-reader/releases/latest) (`rsvp-reader-explainer.mp4`); the animated page it is rendered from is `docs/explainer/index.html` (open it in a browser and press Play).*
 
 ## Use
 
